@@ -3,11 +3,16 @@ package verifier
 import (
 	"errors"
 	"regexp"
+	"strings"
 )
 
+const emailRegexString = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+
+var emailRegex = regexp.MustCompile(emailRegexString)
+
 type Syntax struct {
-	username string
-	domain   string
+	Username string
+	Domain   string
 	Valid    bool
 }
 
@@ -15,9 +20,23 @@ func isAddressValid(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-const emailRegexString = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+func ParseAddress(email string) Syntax {
 
-var emailRegex = regexp.MustCompile(emailRegexString)
+	isAddressValid := isAddressValid(email)
+	if !isAddressValid {
+		return Syntax{Valid: false}
+	}
+
+	index := strings.LastIndex(email, "@")
+	username := email[:index]
+	domain := email[index+1:]
+
+	return Syntax{
+		Username: username,
+		Domain:   domain,
+		Valid:    true,
+	}
+}
 
 func VerifyEmail(email string) (bool, error) {
 	if email == "" {
