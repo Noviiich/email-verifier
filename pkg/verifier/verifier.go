@@ -5,6 +5,12 @@ import (
 	"regexp"
 )
 
+type Syntax struct {
+	username string
+	domain   string
+	Valid    bool
+}
+
 func isAddressValid(email string) bool {
 	return emailRegex.MatchString(email)
 }
