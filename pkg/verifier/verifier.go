@@ -16,33 +16,42 @@ type Syntax struct {
 	Valid    bool
 }
 
+type Result struct {
+	Syntax Syntax
+	Email  string
+}
+
 func isAddressValid(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-func ParseAddress(email string) Syntax {
+func ParseAddress(email string) *Syntax {
 
 	isAddressValid := isAddressValid(email)
 	if !isAddressValid {
-		return Syntax{Valid: false}
+		return &Syntax{Valid: false}
 	}
 
 	index := strings.LastIndex(email, "@")
 	username := email[:index]
 	domain := email[index+1:]
 
-	return Syntax{
+	return &Syntax{
 		Username: username,
 		Domain:   domain,
-		Valid:    true,
+		Valid:    isAddressValid,
 	}
 }
 
-func VerifyEmail(email string) (bool, error) {
-	if email == "" {
-		return false, errors.New("email is empty")
+func VerifyEmail(email string) (*Result, error) {
+	syntax := ParseAddress(email)
+	res := Result{
+		Email: email,
 	}
 
-	isAddressValid := isAddressValid(email)
-	return isAddressValid, nil
+	if !syntax.Valid {
+		return &res, errors.New("некорректный email")
+	}
+
+	return &res, nil
 }

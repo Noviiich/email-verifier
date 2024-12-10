@@ -15,11 +15,11 @@ func main() {
 
 	email := os.Args[1]
 
-	syntax := verifier.ParseAddress(email)
-	if !syntax.Valid {
-		fmt.Println("Некорректный email")
+	res, err := verifier.VerifyEmail(email)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	fmt.Println("username:", syntax.Username)
-	fmt.Println("domain:", syntax.Domain)
+	fmt.Println(*res)
 }
