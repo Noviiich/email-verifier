@@ -22,6 +22,7 @@ func main() {
 	}
 
 	domain := *&res.Syntax.Domain
+	username := *&res.Syntax.Username
 
 	mx, err := verifier.CheckMx(domain)
 	if err != nil {
@@ -32,4 +33,11 @@ func main() {
 	for _, record := range mx.Records {
 		fmt.Printf("Сервер: %s, Приоритет: %d\n", record.Host, record.Pref)
 	}
+
+	smtpClient, err := verifier.CheckSMTP(domain, username)
+	if err != nil {
+		fmt.Println("Проблемы с smtp сервером")
+	}
+
+	fmt.Println(smtpClient)
 }
