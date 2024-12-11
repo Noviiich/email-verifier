@@ -21,5 +21,13 @@ func main() {
 		return
 	}
 
-	fmt.Println(*res)
+	domain := *&res.Syntax.Domain
+
+	mxBool, err := verifier.CheckMx(domain)
+	if err != nil {
+		fmt.Println("Нет такой mx-записи")
+		return
+	}
+
+	fmt.Println(mxBool)
 }

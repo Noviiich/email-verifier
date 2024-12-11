@@ -49,6 +49,8 @@ func VerifyEmail(email string) (*Result, error) {
 		Email: email,
 	}
 
+	res.Syntax = *syntax
+
 	if !syntax.Valid {
 		return &res, errors.New("некорректный email")
 	}
