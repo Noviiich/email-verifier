@@ -23,11 +23,13 @@ func main() {
 
 	domain := *&res.Syntax.Domain
 
-	mxBool, err := verifier.CheckMx(domain)
+	mx, err := verifier.CheckMx(domain)
 	if err != nil {
 		fmt.Println("Нет такой mx-записи")
 		return
 	}
 
-	fmt.Println(mxBool)
+	for _, record := range mx.Records {
+		fmt.Printf("Сервер: %s, Приоритет: %d\n", record.Host, record.Pref)
+	}
 }

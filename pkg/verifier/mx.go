@@ -2,11 +2,19 @@ package verifier
 
 import "net"
 
-func CheckMx(domain string) (bool, error) {
+type Mx struct {
+	Records     []*net.MX
+	HasMxRecord bool
+}
+
+func CheckMx(domain string) (*Mx, error) {
 	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
-		return false, err
+		return &Mx{HasMxRecord: false}, err
 	}
 
-	return len(mxRecords) > 0, nil
+	return &Mx{
+		Records:     mxRecords,
+		HasMxRecord: len(mxRecords) > 0,
+	}, nil
 }
