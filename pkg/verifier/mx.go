@@ -8,6 +8,7 @@ type Mx struct {
 }
 
 func CheckMx(domain string) (*Mx, error) {
+	domain = domainToASCII(domain)
 	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
 		return &Mx{HasMxRecord: false}, err
