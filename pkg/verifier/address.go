@@ -9,49 +9,36 @@ import (
 var emailRegex = regexp.MustCompile(emailRegexString)
 
 type Syntax struct {
+	Email    string
 	Username string
 	Domain   string
 	Valid    bool
-}
-
-type Result struct {
-	Syntax Syntax
-	Email  string
 }
 
 func isAddressValid(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-func ParseAddress(email string) *Syntax {
+func (v *Verifier) ParseAddress(email string) error {
 
 	isAddressValid := isAddressValid(email)
 	if !isAddressValid {
-		return &Syntax{Valid: false}
+		v.Syntax = &Syntax{
+			Email: email,
+			Valid: isAddressValid,
+		}
+		return errors.New("Введен некорректный email")
 	}
 
 	index := strings.LastIndex(email, "@")
 	username := email[:index]
 	domain := email[index+1:]
 
-	return &Syntax{
+	v.Syntax = &Syntax{
+		Email:    email,
 		Username: username,
 		Domain:   domain,
 		Valid:    isAddressValid,
 	}
-}
-
-func VerifyEmail(email string) (*Result, error) {
-	syntax := ParseAddress(email)
-	res := Result{
-		Email: email,
-	}
-
-	res.Syntax = *syntax
-
-	if !syntax.Valid {
-		return &res, errors.New("некорректный email")
-	}
-
-	return &res, nil
+	return nil
 }
