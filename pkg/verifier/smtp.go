@@ -1,37 +1,88 @@
 package verifier
 
 import (
-	"fmt"
+	"errors"
+	"net"
 	"net/smtp"
+	"sync"
 )
 
-func CheckSMTP(domain, username string) (*smtp.Client, error) {
-	mx, err := CheckMx(domain)
+var (
+	mutex sync.Mutex
+	done  bool
+)
+
+type SMTP struct {
+	HostExists bool
+	Client     *smtp.Client
+}
+
+func newSMTPClient(domain string) (*smtp.Client, error) {
+	domain = domainToASCII(domain)
+	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
-		fmt.Println("Нет такой mx-записи")
 		return nil, err
 	}
-	var conn *smtp.Client
 
-	for _, record := range mx.Records {
-		addr := record.Host + smtpPort
-		conn, err = smtp.Dial(addr)
-		if err != nil {
-			fmt.Printf("На сервере %s проблемы", record.Host)
-			continue
-		}
+	if len(mxRecords) == 0 {
+		return nil, errors.New("No MX records found")
+	}
 
-		if err := conn.Hello(defaultHelloName); err != nil {
-			fmt.Printf("На сервере %s проблемы с отправкой hello", record.Host)
-			continue
-		}
+	ch := make(chan interface{}, 1)
 
-		if err := conn.Mail(defaultFromEmail); err != nil {
-			fmt.Printf("На сервере %s проблемы с отправкой mail", record.Host)
-			continue
+	for _, r := range mxRecords {
+
+		addr := r.Host + smtpPort
+
+		go func() {
+			c, err := smtp.Dial(addr)
+			if err != nil {
+				if !done {
+					ch <- err
+				}
+				return
+			}
+
+			mutex.Lock()
+			switch {
+			case !done:
+				done = true
+				ch <- c
+			default:
+				c.Close()
+			}
+			mutex.Unlock()
+
+		}()
+	}
+
+	var errs []error
+
+	for {
+		res := <-ch
+		switch r := res.(type) {
+		case *smtp.Client:
+			return r, nil
+		case error:
+			errs = append(errs, r)
+			if len(errs) == len(mxRecords) {
+				return nil, errors.New("All MX records failed")
+			}
+		default:
+			return nil, errors.New("Unknown error")
 		}
 
 	}
+}
 
-	return conn, nil
+func (v *Verifier) CheckSMTP() error {
+	client, err := newSMTPClient(v.Syntax.Domain)
+
+	if err != nil {
+		v.SMTP = &SMTP{HostExists: false}
+		return err
+	}
+
+	v.SMTP = &SMTP{HostExists: true, Client: client}
+	return nil
 }
