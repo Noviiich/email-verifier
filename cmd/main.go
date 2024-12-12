@@ -15,29 +15,15 @@ func main() {
 
 	email := os.Args[1]
 
-	res, err := verifier.VerifyEmail(email)
+	verifier := verifier.NewVierifier()
+
+	client, err := verifier.Verify(email)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	domain := *&res.Syntax.Domain
-	username := *&res.Syntax.Username
+	fmt.Println("Email:", email)
+	fmt.Println("Client:", client)
 
-	mx, err := verifier.CheckMx(domain)
-	if err != nil {
-		fmt.Println("Нет такой mx-записи")
-		return
-	}
-
-	for _, record := range mx.Records {
-		fmt.Printf("Сервер: %s, Приоритет: %d\n", record.Host, record.Pref)
-	}
-
-	smtpClient, err := verifier.CheckSMTP(domain, username)
-	if err != nil {
-		fmt.Println("Проблемы с smtp сервером")
-	}
-
-	fmt.Println(smtpClient)
 }
