@@ -7,19 +7,19 @@ type Mx struct {
 	HasMxRecord bool
 }
 
-func (v *Verifier) CheckMx() error {
-	domain := domainToASCII(v.Syntax.Domain)
-	mxRecords, err := net.LookupMX(domain)
-	if err != nil {
-		v.Mx = &Mx{
-			HasMxRecord: false,
-		}
-		return err
+func isLenRecords(records []*net.MX) bool {
+	return len(records) > 0
+}
+
+func (v *Verifier) CheckMx(domain string) (*Mx, error) {
+	domain = domainToASCII(domain)
+	mx, err := net.LookupMX(domain)
+	if err != nil && !isLenRecords(mx) {
+		return nil, err
 	}
 
-	v.Mx = &Mx{
-		Records:     mxRecords,
-		HasMxRecord: true,
-	}
-	return nil
+	return &Mx{
+		Records:     mx,
+		HasMxRecord: isLenRecords(mx),
+	}, nil
 }
